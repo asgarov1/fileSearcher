@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
+import static com.asgarov.finder.helper.ApplicationProperties.*;
 import static com.asgarov.finder.helper.UIHelper.*;
 import static com.asgarov.finder.service.FinderService.getFinder;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
@@ -30,12 +31,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class FinderApplication extends Application {
 
-    private static final long DELAY_BETWEEN_NEW_REQUEST_CHECKS_IN_MS = 200;
-    public static final String STANDARD_DIRECTORY = "C:/Users/";
-
     private final VBox resultsBox = createCenteredVBox();
-    private final TextField fileInput = createTextField(400);
-    private final TextField startDirectory = createTextField(400, STANDARD_DIRECTORY);
+    private final TextField fileInput = createTextField(TEXT_FIELD_WIDTH);
+    private final TextField startDirectory = createTextField(TEXT_FIELD_WIDTH, STANDARD_DIRECTORY);
     private final Label infoLabel = createGrayLabel("");
 
     private final ScheduledExecutorService scheduledService = newSingleThreadScheduledExecutor();
@@ -48,39 +46,39 @@ public class FinderApplication extends Application {
     @Override
     public void start(Stage primaryStage) {
         DirectoryChooser directoryChooser = createDirectoryChooser();
-        Button selectDirectory = new Button("Choose");
+        Button selectDirectory = new Button(CHOOSE);
         selectDirectory.setOnAction(e -> chooseDirectory(primaryStage, directoryChooser));
 
-        Button searchButton = createButton("Search");
+        Button searchButton = createButton(SEARCH);
         searchButton.setOnAction(event -> search(fileInput.getText(), startDirectory.getText()));
         searchButton.setDefaultButton(true);
 
-        Button stopButton = createButton("Stop");
+        Button stopButton = createButton(STOP);
         stopButton.setOnAction(event -> {
-            infoLabel.setText("Stopped search");
+            infoLabel.setText(STOPPED_SEARCH_MESSAGE);
             scheduledFuture.cancel(true);
             getFinder().stopSearch();
         });
 
-        HBox buttons = new HBox(10);
+        HBox buttons = new HBox(SPACING);
         buttons.setAlignment(Pos.CENTER);
         buttons.getChildren().addAll(searchButton, stopButton);
 
-        HBox inputComponents = new HBox(10);
+        HBox inputComponents = new HBox(SPACING);
         inputComponents.setAlignment(Pos.CENTER);
-        inputComponents.getChildren().addAll(createBlackLabel("FileName:"), fileInput, createBlackLabel("Starting Directory:"), startDirectory, selectDirectory);
+        inputComponents.getChildren().addAll(createBlackLabel(FILE_NAME), fileInput, createBlackLabel(STARTING_DIRECTORY), startDirectory, selectDirectory);
 
-        final VBox root = new VBox(20);
+        final VBox root = new VBox(SPACING);
         root.setAlignment(Pos.CENTER);
 
         ScrollPane scrollPane = new ScrollPane(resultsBox);
-        scrollPane.setPadding(new Insets(20));
+        scrollPane.setPadding(new Insets(SPACING));
         scrollPane.setFitToWidth(true);
 
         root.getChildren().addAll(infoLabel, inputComponents, buttons, scrollPane);
 
-        Scene scene = new Scene(root, 900, 500);
-        primaryStage.setTitle("My search app");
+        Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
+        primaryStage.setTitle(TITLE);
         primaryStage.setScene(scene);
         primaryStage.show();
         primaryStage.setOnCloseRequest(event -> {
@@ -105,13 +103,13 @@ public class FinderApplication extends Application {
         getFinder().clearSearchResults();
 
         if (!fileInput.isEmpty() && !startDirectory.isEmpty()) {
-            infoLabel.setText("Searching...");
+            infoLabel.setText(SEARCHING_MESSAGE);
             if (!scheduledFuture.isCancelled()) {
                 scheduledFuture.cancel(true);
             }
             scheduledFuture = scheduleResultsTextAreaUpdater();
             try {
-                Files.list(Paths.get(startDirectory)).forEach((path) -> getFinder().submit(fileInput, path, 25));
+                Files.list(Paths.get(startDirectory)).forEach((path) -> getFinder().submit(fileInput, path, DEFAULT_DEPTH));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -122,11 +120,11 @@ public class FinderApplication extends Application {
         try {
             box.getChildren().clear();
             if (!getFinder().getSearchResults().isEmpty()) {
-                box.getChildren().add(createGrayLabel("Left click -> opens, right click -> copies to clipboard"));
+                box.getChildren().add(createGrayLabel(LINK_INSTRUCTIONS_MESSAGE));
                 getFinder().getSearchResults().stream().map(UIHelper::mapToHyperlink).forEach(box.getChildren()::add);
             }
             if (!getFinder().stillSearching()) {
-                infoLabel.setText("Capped at 100 results. Consider refining your search");
+                infoLabel.setText(RESULTS_MAXED_OUT_MESSAGE);
             }
         } catch (Exception e) {
             e.printStackTrace();

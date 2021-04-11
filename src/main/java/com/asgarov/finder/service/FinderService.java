@@ -5,16 +5,18 @@ import com.asgarov.finder.util.FileVisitorImpl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static java.lang.Runtime.getRuntime;
+
 public class FinderService {
 
+    public static final int MAX_RESULTS = 100;
     private final Set<String> searchResults = new ConcurrentSkipListSet<>();
-    private ExecutorService executorService = Executors.newFixedThreadPool(8);
+    private ExecutorService executorService = Executors.newFixedThreadPool(getRuntime().availableProcessors());
 
     private static final FinderService instance = new FinderService();
 
@@ -31,7 +33,7 @@ public class FinderService {
 
     private void updateSearchResults(String fileName, Path startDirectory, int depth) throws IOException {
         if(searchResults.size() < 100) {
-            Files.walkFileTree(startDirectory, new HashSet<>(), depth, new FileVisitorImpl(fileName));
+            Files.walkFileTree(startDirectory, Set.of(), depth, new FileVisitorImpl(fileName));
         }
     }
 
@@ -47,13 +49,13 @@ public class FinderService {
         searchResults.clear();
     }
 
-    public void submit(String fileInput, Path startDirectory, int temp) {
+    public void submit(String fileInput, Path startDirectory, int depth) {
         if (executorService.isShutdown()) {
-            executorService = Executors.newFixedThreadPool(8);
+            executorService = Executors.newFixedThreadPool(getRuntime().availableProcessors());
         }
         executorService.submit(() -> {
             try {
-                updateSearchResults(fileInput, startDirectory, temp);
+                updateSearchResults(fileInput, startDirectory, depth);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -65,6 +67,6 @@ public class FinderService {
     }
 
     public boolean stillSearching() {
-        return searchResults.size() < 100;
+        return searchResults.size() < MAX_RESULTS;
     }
 }
