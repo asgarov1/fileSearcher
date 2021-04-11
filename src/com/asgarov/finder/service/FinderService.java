@@ -5,22 +5,18 @@ import com.asgarov.finder.util.FileVisitorImpl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FinderService {
 
     private final Set<String> searchResults = new ConcurrentSkipListSet<>();
-    private ExecutorService executorService = Executors.newWorkStealingPool(16);
+    private ExecutorService executorService = Executors.newFixedThreadPool(8);
 
     private static final FinderService instance = new FinderService();
-
-    private final AtomicBoolean stillSearching = new AtomicBoolean(true);
 
     private FinderService() {
     }
@@ -33,20 +29,13 @@ public class FinderService {
         searchResults.add(searchResult);
     }
 
-    private void updateSearchResults(String fileName, String startDirectory, int depth) throws IOException {
-        if (stillSearching.get()) {
-            Path searchPath;
-            if (!startDirectory.isEmpty() && Files.exists(Paths.get(startDirectory))) {
-                searchPath = Paths.get(startDirectory);
-            } else {
-                searchPath = Paths.get("").toAbsolutePath().getRoot();
-            }
-            Files.walkFileTree(searchPath, new HashSet<>(), depth, new FileVisitorImpl(fileName));
+    private void updateSearchResults(String fileName, Path startDirectory, int depth) throws IOException {
+        if(searchResults.size() < 100) {
+            Files.walkFileTree(startDirectory, new HashSet<>(), depth, new FileVisitorImpl(fileName));
         }
     }
 
     public void stopSearch() {
-        stillSearching.set(false);
         executorService.shutdownNow();
     }
 
@@ -58,9 +47,9 @@ public class FinderService {
         searchResults.clear();
     }
 
-    public void submit(String fileInput, String startDirectory, int temp) {
+    public void submit(String fileInput, Path startDirectory, int temp) {
         if (executorService.isShutdown()) {
-            executorService = Executors.newWorkStealingPool();
+            executorService = Executors.newFixedThreadPool(8);
         }
         executorService.submit(() -> {
             try {
@@ -75,5 +64,7 @@ public class FinderService {
         return searchResults;
     }
 
-
+    public boolean stillSearching() {
+        return searchResults.size() < 100;
+    }
 }

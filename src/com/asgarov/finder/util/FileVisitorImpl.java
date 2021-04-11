@@ -18,7 +18,11 @@ public class FileVisitorImpl implements FileVisitor<Path> {
 
     @Override
     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-        return CONTINUE;
+        if (getFinder().stillSearching()) {
+            return CONTINUE;
+        } else {
+            return FileVisitResult.TERMINATE;
+        }
     }
 
     @Override
