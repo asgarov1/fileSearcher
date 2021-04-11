@@ -1,7 +1,5 @@
 package com.asgarov.finder.service;
 
-import com.asgarov.finder.util.FileVisitorImpl;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,14 +8,13 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.asgarov.finder.helper.ApplicationProperties.MAX_RESULTS;
 import static java.lang.Runtime.getRuntime;
 
 public class FinderService {
 
-    public static final int MAX_RESULTS = 100;
     private final Set<String> searchResults = new ConcurrentSkipListSet<>();
     private ExecutorService executorService = Executors.newFixedThreadPool(getRuntime().availableProcessors());
-
     private static final FinderService instance = new FinderService();
 
     private FinderService() {
@@ -32,7 +29,7 @@ public class FinderService {
     }
 
     private void updateSearchResults(String fileName, Path startDirectory, int depth) throws IOException {
-        if(searchResults.size() < 100) {
+        if(stillSearching()) {
             Files.walkFileTree(startDirectory, Set.of(), depth, new FileVisitorImpl(fileName));
         }
     }

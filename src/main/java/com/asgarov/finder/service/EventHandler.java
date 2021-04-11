@@ -1,4 +1,4 @@
-package com.asgarov.finder.helper;
+package com.asgarov.finder.service;
 
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;

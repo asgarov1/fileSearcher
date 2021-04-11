@@ -1,12 +1,13 @@
-package com.asgarov.finder.util;
+package com.asgarov.finder.service;
+
+import com.asgarov.finder.util.PathUtil;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
 import static com.asgarov.finder.service.FinderService.getFinder;
-import static java.nio.file.FileVisitResult.CONTINUE;
-import static java.nio.file.FileVisitResult.SKIP_SUBTREE;
+import static java.nio.file.FileVisitResult.*;
 
 public class FileVisitorImpl implements FileVisitor<Path> {
 
@@ -17,16 +18,16 @@ public class FileVisitorImpl implements FileVisitor<Path> {
     }
 
     @Override
-    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
         if (getFinder().stillSearching()) {
             return CONTINUE;
         } else {
-            return FileVisitResult.TERMINATE;
+            return TERMINATE;
         }
     }
 
     @Override
-    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
         if (PathUtil.matches(searchedFileName, file)) {
             getFinder().addSearchResult(file.toString());
         }
@@ -42,7 +43,7 @@ public class FileVisitorImpl implements FileVisitor<Path> {
     }
 
     @Override
-    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
         return CONTINUE;
     }
 }

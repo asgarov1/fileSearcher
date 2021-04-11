@@ -13,7 +13,7 @@ import javafx.stage.DirectoryChooser;
 
 import java.nio.file.Paths;
 
-import static com.asgarov.finder.helper.EventHandler.handleLinkClickedEvent;
+import static com.asgarov.finder.service.EventHandler.handleLinkClickedEvent;
 
 public class UIHelper {
     /**

@@ -5,14 +5,13 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
@@ -20,8 +19,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.function.Predicate;
 
 import static com.asgarov.finder.helper.ApplicationProperties.*;
 import static com.asgarov.finder.helper.UIHelper.*;
@@ -87,6 +88,10 @@ public class FinderApplication extends Application {
         });
     }
 
+    private boolean isHyperlink(Node intersectedNode) {
+        return intersectedNode instanceof Text;
+    }
+
     private void chooseDirectory(Stage primaryStage, DirectoryChooser directoryChooser) {
         File selectedDirectory = directoryChooser.showDialog(primaryStage);
         if (selectedDirectory != null) {
@@ -95,12 +100,13 @@ public class FinderApplication extends Application {
     }
 
     public ScheduledFuture<?> scheduleResultsTextAreaUpdater() {
-        return scheduledService.scheduleWithFixedDelay(() -> Platform.runLater(() -> updateSearchResultsPane(resultsBox)),
-                0, DELAY_BETWEEN_NEW_REQUEST_CHECKS_IN_MS, MILLISECONDS);
+        return scheduledService.scheduleWithFixedDelay(() -> Platform.runLater(this::updateSearchResultsPane),
+                DELAY_BETWEEN_NEW_REQUEST_CHECKS_IN_MS, DELAY_BETWEEN_NEW_REQUEST_CHECKS_IN_MS, MILLISECONDS);
     }
 
     public void search(String fileInput, String startDirectory) {
         getFinder().clearSearchResults();
+        resultsBox.getChildren().clear();
 
         if (!fileInput.isEmpty() && !startDirectory.isEmpty()) {
             infoLabel.setText(SEARCHING_MESSAGE);
@@ -116,18 +122,43 @@ public class FinderApplication extends Application {
         }
     }
 
-    public void updateSearchResultsPane(Pane box) {
+    public void updateSearchResultsPane() {
+        if (resultsBox.getChildren().size() == getFinder().getSearchResults().size()) {
+            return;
+        }
+
         try {
-            box.getChildren().clear();
             if (!getFinder().getSearchResults().isEmpty()) {
-                box.getChildren().add(createGrayLabel(LINK_INSTRUCTIONS_MESSAGE));
-                getFinder().getSearchResults().stream().map(UIHelper::mapToHyperlink).forEach(box.getChildren()::add);
+                addInstructionsMessageAsAFirstNodeIfNeeded(resultsBox);
+                getFinder().getSearchResults()
+                        .stream()
+                        .filter(Predicate.not(this::isDisplayed))
+                        .map(UIHelper::mapToHyperlink)
+                        .forEach(resultsBox.getChildren()::add);
             }
             if (!getFinder().stillSearching()) {
                 infoLabel.setText(RESULTS_MAXED_OUT_MESSAGE);
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private boolean isDisplayed(String linkText) {
+        return resultsBox.getChildren()
+                .stream()
+                .filter(node -> node instanceof Hyperlink)
+                .map(node -> (Hyperlink)node)
+                .map(Hyperlink::getText)
+                .filter(Objects::nonNull)
+                .anyMatch(text -> text.equals(linkText));
+    }
+
+    private void addInstructionsMessageAsAFirstNodeIfNeeded(Pane box) {
+        if(box.getChildren().isEmpty()) {
+            Label grayLabel = createGrayLabel(LINK_INSTRUCTIONS_MESSAGE);
+            grayLabel.setPadding(new Insets(0,0,20,0));
+            box.getChildren().add(grayLabel);
         }
     }
 

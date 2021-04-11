@@ -21,5 +21,6 @@ public class ApplicationProperties {
     public static final int WINDOW_WIDTH = Integer.parseInt(getProperties().getProperty("WINDOW_WIDTH"));
     public static final int WINDOW_HEIGHT = Integer.parseInt(getProperties().getProperty("WINDOW_HEIGHT"));
     public static final int DEFAULT_DEPTH = Integer.parseInt(getProperties().getProperty("DEFAULT_DEPTH"));
+    public static final int MAX_RESULTS = Integer.parseInt(getProperties().getProperty("MAX_RESULTS"));
 
 }

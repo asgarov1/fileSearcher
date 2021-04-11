@@ -20,13 +20,14 @@ explicitly to the module-path._
 - `--module-path "place where dependencies are" --add-modules="name of the module to add"` puts dependencies on module-path
 
 #### To compile
-`javac src/main/java/com/asgarov/finder/*.java src/main/java/com/asgarov/finder/helper/*.java 
-src/main/java/com/asgarov/finder/service/*.java  src/main/java/com/asgarov/finder/util/*.java src/main/java/module-info.java`
+`javac -d out/production/findFile src/main/java/com/asgarov/finder/*.java 
+src/main/java/com/asgarov/finder/helper/*.java src/main/java/com/asgarov/finder/service/*.java 
+src/main/java/com/asgarov/finder/util/*.java src/main/java/module-info.java
+`
 
 #### To jar
 
-First compile the project and generate out directory
-Then run:
+First compile the project and then run:
 
 `jar -cvfe com.asgarov.finder.jar com.asgarov.finder.FinderApplication -C out/production/findFile .
 `
